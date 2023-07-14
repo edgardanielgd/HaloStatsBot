@@ -164,7 +164,7 @@ const pkgPlayers = {
     },
 
     // Static stats metadata
-    updateStatsMessage: async (channel, message, ip, port) => {
+    updateStatsMessage: async (channel, message, ip, port, UDPQuery = true) => {
         if (!channel || !message || !ip || !port)
             return {
                 error: "You must provide channel, message, ip and port"
@@ -189,7 +189,9 @@ const pkgPlayers = {
 
         const dbClient = db.client;
         const dbDatabase = dbClient.db(config.DBNAME);
-        const dbCollection = dbDatabase.collection(config.STATSCHANNELSCOLLECTION);
+        const dbCollection = dbDatabase.collection(
+            UDPQuery ? config.STATSCHANNELSCOLLECTION : config.REMOTECONSOLESTATSCHANNELSCOLLECTION
+        );
 
         try {
 
@@ -203,24 +205,25 @@ const pkgPlayers = {
                         channel: channel.id,
                         message: message.id,
                         ip: ip,
-                        port: port,
+                        port: port
                     }
                 }, {
                 upsert: true,
                 returnOriginal: false
             }
             )
-        } catch (err) {
-            console.log(err);
 
             return {
+            } catch (err) {
+                console.log(err);
+
                 error: "Unable to update stats message"
             }
         }
     },
 
-    removeStatsMessage: async (channel, message) => {
-        if (!channel || !message)
+    removeStatsMessage: async (channelId, messageId, UDPQuery = true) => {
+        if (!channelId || !messageId)
             return {
                 error: "You must provide channel and message"
             }
@@ -232,13 +235,15 @@ const pkgPlayers = {
 
         const dbClient = db.client;
         const dbDatabase = dbClient.db(config.DBNAME);
-        const dbCollection = dbDatabase.collection(config.STATSCHANNELSCOLLECTION);
+        const dbCollection = dbDatabase.collection(
+            UDPQuery ? config.STATSCHANNELSCOLLECTION : config.REMOTECONSOLESTATSCHANNELSCOLLECTION
+        );
 
         try {
             await dbCollection.deleteOne(
                 {
-                    channel: channel.id,
-                    message: message.id,
+                    channel: channelId,
+                    message: messageId,
                 }
             )
 
@@ -254,7 +259,7 @@ const pkgPlayers = {
         }
     },
 
-    getStatsMessages: async () => {
+    getStatsMessages: async (UDPQuery = true) => {
         if (!db.client)
             return {
                 error: "Database client hasn't been initialized yet"
@@ -262,7 +267,9 @@ const pkgPlayers = {
 
         const dbClient = db.client;
         const dbDatabase = dbClient.db(config.DBNAME);
-        const dbCollection = dbDatabase.collection(config.STATSCHANNELSCOLLECTION);
+        const dbCollection = dbDatabase.collection(
+            UDPQuery ? config.STATSCHANNELSCOLLECTION : config.REMOTECONSOLESTATSCHANNELSCOLLECTION
+        );
 
         try {
             const result = await dbCollection.find({}).toArray();

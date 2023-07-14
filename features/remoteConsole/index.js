@@ -2,6 +2,10 @@ const LoginFeature = require('./login');
 const LogoutFeature = require('./logout');
 const SendCommandFeautre = require('./sendCommand');
 const QueryStatsFeature = require('./queryStats');
+<<<<<<< HEAD
+=======
+const serverStatsFeature = require('./handleServersStats');
+>>>>>>> master
 const ConnectionPool = require('./ConnectionPool');
 const Feature = require("./../Feature");
 
@@ -30,5 +34,9 @@ remoteConsoleFeature.addSubFeature(loginFeature);
 remoteConsoleFeature.addSubFeature(logoutFeature);
 remoteConsoleFeature.addSubFeature(sendCommandFeature);
 remoteConsoleFeature.addSubFeature(queryStatsFeature);
+<<<<<<< HEAD
+=======
+remoteConsoleFeature.addSubFeature(serverStatsFeature);
+>>>>>>> master
 
 module.exports = remoteConsoleFeature;

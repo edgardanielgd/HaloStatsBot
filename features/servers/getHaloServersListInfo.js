@@ -176,6 +176,11 @@ class GetHaloServersListInfoFeature extends Feature {
         const ip = ip_port[0];
         const port = ip_port[1];
 
+<<<<<<< HEAD
+=======
+        await deferInteractionReply(interaction);
+
+>>>>>>> master
         const options = await this.singleServerFeature.configureMessage(interaction, ip, port, true, false);
 
         // Overwrite the messages footer setting the correct author

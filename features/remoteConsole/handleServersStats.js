@@ -3,21 +3,23 @@ const EmbedGenerator = require("../../utils/generateEmbed");
 const { updateStatsMessage, removeStatsMessage, getStatsMessages } = require("../../db/servers");
 const config = require("../../config");
 const { SlashCommandBuilder } = require("discord.js")
-const HaloServersQuery = require("./Query");
+const RemoteConsoleConnection = require("./Connection");
 const { sendMessage, replyInteraction, editMessage, deferInteractionReply } = require("../../utils/crudMessages");
+const { generateBasicServerDescription } = require("./utils");
+const md5 = require("blueimp-md5");
 
-class GetServersStaticStatsFeature extends Feature {
+class RemoteConsoleGetServersStaticStatsFeature extends Feature {
     constructor() {
         super("Manage stats channels info", "Show constant stats of servers", "💻");
         this.messageCommandAliases = [
-            "addserverstat", "addstat"
+            "rconaddserverstat", "rconaddstat"
         ];
         this.messageCommandAliasesDropStat = [
-            "dropserverstat", "dropstat"
+            "rcondropserverstat", "rcondropstat"
         ]
 
-        this.slashCommandName = "addstat";
-        this.slashCommandNameDropStat = "dropstat";
+        this.slashCommandName = "rconaddstat";
+        this.slashCommandNameDropStat = "rcondropstat";
 
         this.statsMessages = [];
     }
@@ -26,7 +28,7 @@ class GetServersStaticStatsFeature extends Feature {
         // Generate slash command info
         const slashCommandInfo = new SlashCommandBuilder()
             .setName(this.slashCommandName)
-            .setDescription("Add a stat channel and message for a given IP and Port")
+            .setDescription("Add a stat channel and message for a given IP and Port (Rcon query)")
             .addStringOption(option =>
                 option.setName("channel")
                     .setDescription("The channel's ID where the message will be sent")
@@ -50,7 +52,7 @@ class GetServersStaticStatsFeature extends Feature {
 
         const deleteSlashCommandInfo = new SlashCommandBuilder()
             .setName(this.slashCommandNameDropStat)
-            .setDescription("Remove a stat channel and message")
+            .setDescription("Remove a stat channel and message (Rcon query)")
             .addStringOption(option =>
                 option.setName("channel")
                     .setDescription("The channel's ID where the message will be sent")
@@ -94,70 +96,138 @@ class GetServersStaticStatsFeature extends Feature {
                 message, channel.isDMBased()
             );
 
-            const query = new HaloServersQuery(statServer.ip, statServer.port);
-<<<<<<< HEAD
-            const result = await query.queryServer();
+            const query = new RemoteConsoleConnection(statServer.ip, statServer.port);
+            const result = await query.connect();
 
             if (result.error) {
                 generator.updateAtomicData(
-                    "Error",
+                    `[${statServer.ip}:${statServer.port}] Error:`,
                     result.error
                 );
-            } else {
-                generator.updateAtomicData(
-                    "Stats",
-                    "Server is online"
-=======
-            const result = await query.send();
 
-            if (result.error) {
-                generator.updateAtomicData(
-                    `[${statServer.ip}:${statServer.port}]}] Error:`,
-                    result.error
-                );
+                editMessage(message, {
+                    content: null,
+                    embeds: [generator.getEmbed()]
+                });
             } else {
 
-                const data = result.data;
+                const handleError = (err) => {
+                    query.removeAllListeners();
 
-                const title = `${data.name}`;
+                    query.disconnect();
 
-                let description = `\`Map:\` ${data.mapName}\n`;
-                description += `\`Gametype:\` ${data.gametype}\n`;
-                description += `\`Variant:\` ${data.gameVariant}\n`;
-                description += `\`Players:\` ${data.currentPlayers}/${data.maxPlayers}\n`;
-                description += `\`Teamplay:\` ${data.teamPlay ? "Yes" : "No"}\n`;
-                if (data.teamPlay) {
-                    description += `\`Red Team:\` #${data.redPlayers.length} \`Score:\` ${data.redScore}\n`;
-                    description += `\`Blue Team:\` #${data.bluePlayers.length} \`Score:\` ${data.blueScore}\n`;
-                }
-                description += "\n";
-                const players = data.teamPlay ? data.redPlayers.concat(data.bluePlayers) : data.players;
-                for (let i = 0; i < players.length; i++) {
-                    const player = players[i];
-                    const teamLogo = data.teamPlay ? (player.team === "red" ? "🔴" : "🔵") : "⚪";
+                    generator.updateAtomicData(
+                        `[${statServer.ip}:${statServer.port}] Error:`,
+                        err.message
+                    );
 
-                    description += `\`${teamLogo} ${i + 1}. \`${player.name} \`Score:\` ${player.score} \`Ping:\` ${player.ping} ms\n`;
+                    editMessage(message, {
+                        content: null,
+                        embeds: [generator.getEmbed()]
+                    });
                 }
 
-                generator.updateAtomicData(
-                    title,
-                    description
->>>>>>> master
-                );
+                const handleClose = () => {
+                    query.removeAllListeners();
+
+                    generator.updateAtomicData(
+                        `[${statServer.ip}:${statServer.port}] Error:`,
+                        "Connection closed"
+                    );
+
+                    editMessage(message, {
+                        content: null,
+                        embeds: [generator.getEmbed()]
+                    });
+                }
+
+                // Try to login first
+                const credentials = {
+                    opcode: 1,
+                    username: config.REMOTECONSOLEPLAYERNAME,
+                    password: md5(config.REMOTECONSOLEPASSWORD)
+                }
+
+                query.sendCommand(credentials);
+
+                // Schedule async wait for response / error
+                query.on("data", (data) => {
+                    const opcode = data.opcode;
+
+                    if (opcode === 1) {
+                        query.removeAllListeners();
+
+                        const level = data.level;
+
+                        if (level < 0) {
+                            generator.updateAtomicData(
+                                `[${statServer.ip}:${statServer.port}] Error:`,
+                                "Invalid credentials"
+                            );
+
+                            editMessage(message, {
+                                content: null,
+                                embeds: [generator.getEmbed()]
+                            });
+
+                            return;
+                        }
+
+                        // Success login in, lets send a query message
+                        const queryMessage = {
+                            opcode: 2,
+                        }
+
+                        query.sendCommand(queryMessage);
+
+                        query.on("data", (data) => {
+
+                            if (data.opcode === 2) {
+
+                                query.removeAllListeners();
+
+                                query.disconnect();
+
+                                // This is the actual query response
+                                const title = `${data.name}`;
+
+                                generator.updateAtomicData(
+                                    title,
+                                    generateBasicServerDescription(query, data)
+                                );
+
+                                editMessage(message, {
+                                    content: null,
+                                    embeds: [generator.getEmbed()]
+                                });
+                            }
+                        });
+
+                        query.on("error", (err) => {
+                            handleError(err);
+                        });
+
+                        query.on("close", () => {
+                            handleClose();
+                        });
+
+                    }
+                });
+
+                query.on("error", (err) => {
+                    handleError(err);
+                });
+
+                query.on("close", () => {
+                    handleClose();
+                });
+
             }
-
-            await editMessage(message, {
-<<<<<<< HEAD
-=======
-                content: null,
->>>>>>> master
-                embeds: [generator.getEmbed()]
-            });
         }
     }
 
     async updateStatsMessages() {
-        const result = await getStatsMessages();
+        const result = await getStatsMessages(false);
 
         if (!result.error) {
             this.statsMessages = result.result;
@@ -198,7 +268,7 @@ class GetServersStaticStatsFeature extends Feature {
         }
 
         const result = await updateStatsMessage(
-            tarChannel, tarMessage, ip, port
+            tarChannel, tarMessage, ip, port, false
         );
 
         if (result.error) {
@@ -221,11 +291,7 @@ class GetServersStaticStatsFeature extends Feature {
         return generator.getEmbed();
     }
 
-<<<<<<< HEAD
-    async generateEmbedResponseDrop(messageOrInteraction, targetChannel, targetMessage) {
-=======
     async generateEmbedResponseDrop(messageOrInteraction, targetChannelId, targetMessageId) {
->>>>>>> master
         const generator = new EmbedGenerator();
         const channel = messageOrInteraction.channel;
 
@@ -235,11 +301,7 @@ class GetServersStaticStatsFeature extends Feature {
         )
 
         const result = await removeStatsMessage(
-<<<<<<< HEAD
-            targetChannel, targetMessage
-=======
-            targetChannelId, targetMessageId
->>>>>>> master
+            targetChannelId, targetMessageId, false
         );
 
         if (result.error) {
@@ -267,49 +329,31 @@ class GetServersStaticStatsFeature extends Feature {
         if (message.author.id !== config.OWNERID)
             return;
 
-<<<<<<< HEAD
-        let options = {};
-=======
         let embed = null;
->>>>>>> master
         if (this.messageCommandAliases.includes(command)) {
             const targetChannelId = args[0];
             const targetMessageId = args[1];
             const ip = args[2];
             const port = args[3];
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponse(
-                targetChannelId, targetMessageId, ip, port
-=======
             embed = await this.generateEmbedResponse(
                 message, targetChannelId, targetMessageId, ip, port
->>>>>>> master
             );
         } else if (this.messageCommandAliasesDropStat.includes(command)) {
             const targetChannelId = args[0];
             const targetMessageId = args[1];
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponseDrop(
-                targetChannelId, targetMessageId
-=======
             embed = await this.generateEmbedResponseDrop(
                 message, targetChannelId, targetMessageId
->>>>>>> master
             );
 
         } else {
             return;
         }
 
-<<<<<<< HEAD
-        sendMessage(message.channel, options);
-=======
         sendMessage(message.channel, {
             embeds: [embed]
         });
->>>>>>> master
     }
 
     async onInteractionCommand(interaction) {
@@ -318,11 +362,7 @@ class GetServersStaticStatsFeature extends Feature {
             return;
 
         const command = interaction.commandName;
-<<<<<<< HEAD
-        let options = {};
-=======
         let embed = null;
->>>>>>> master
 
         if (command === this.slashCommandName) {
             const targetChannel = interaction.options.getString("channel");
@@ -332,11 +372,7 @@ class GetServersStaticStatsFeature extends Feature {
 
             await deferInteractionReply(interaction);
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponse(
-=======
             embed = await this.generateEmbedResponse(
->>>>>>> master
                 interaction, targetChannel, targetMessage, ip, port
             );
         } else if (command === this.slashCommandNameDropStat) {
@@ -345,26 +381,18 @@ class GetServersStaticStatsFeature extends Feature {
 
             await deferInteractionReply(interaction);
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponseDrop(
-=======
             embed = await this.generateEmbedResponseDrop(
->>>>>>> master
                 interaction, targetChannel, targetMessage
             );
         } else {
             return;
         }
 
-<<<<<<< HEAD
-        replyInteraction(interaction, options);
-=======
         replyInteraction(interaction, {
             embeds: [embed]
         });
->>>>>>> master
     }
 }
 
 // Singleton export
-module.exports = new GetServersStaticStatsFeature();
+module.exports = new RemoteConsoleGetServersStaticStatsFeature();
