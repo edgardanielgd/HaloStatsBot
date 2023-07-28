@@ -71,12 +71,6 @@ class RemoteConsoleConnectFeature extends RemoteConsoleFeature {
             return generator.getEmbed();
         }
 
-<<<<<<< HEAD
-        // Check if user has a connection already
-        const user = messageOrInteraction.author || messageOrInteraction.user;
-
-=======
->>>>>>> master
         const currentConnection = this.pool.getConnection(
             messageOrInteraction
         );

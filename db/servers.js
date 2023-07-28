@@ -214,9 +214,18 @@ const pkgPlayers = {
             )
 
             return {
+<<<<<<< HEAD
             } catch (err) {
                 console.log(err);
 
+=======
+                message: "Success updating stats message"
+            }
+        } catch (err) {
+            console.log(err);
+
+            return {
+>>>>>>> master
                 error: "Unable to update stats message"
             }
         }

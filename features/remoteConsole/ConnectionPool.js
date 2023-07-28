@@ -67,14 +67,11 @@ class ConnectionPool {
         const channel = target.channel;
 
         const key = user.id + ":" + channel.id;
-<<<<<<< HEAD
-=======
         const conn = this.connections[key];
         if (!conn)
             return;
 
         conn.disconnect();
->>>>>>> master
         delete this.connections[key];
     }
 
