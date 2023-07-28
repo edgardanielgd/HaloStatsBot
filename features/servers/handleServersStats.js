@@ -95,19 +95,6 @@ class GetServersStaticStatsFeature extends Feature {
             );
 
             const query = new HaloServersQuery(statServer.ip, statServer.port);
-<<<<<<< HEAD
-            const result = await query.queryServer();
-
-            if (result.error) {
-                generator.updateAtomicData(
-                    "Error",
-                    result.error
-                );
-            } else {
-                generator.updateAtomicData(
-                    "Stats",
-                    "Server is online"
-=======
             const result = await query.send();
 
             if (result.error) {
@@ -142,15 +129,11 @@ class GetServersStaticStatsFeature extends Feature {
                 generator.updateAtomicData(
                     title,
                     description
->>>>>>> master
                 );
             }
 
             await editMessage(message, {
-<<<<<<< HEAD
-=======
                 content: null,
->>>>>>> master
                 embeds: [generator.getEmbed()]
             });
         }
@@ -221,11 +204,7 @@ class GetServersStaticStatsFeature extends Feature {
         return generator.getEmbed();
     }
 
-<<<<<<< HEAD
-    async generateEmbedResponseDrop(messageOrInteraction, targetChannel, targetMessage) {
-=======
     async generateEmbedResponseDrop(messageOrInteraction, targetChannelId, targetMessageId) {
->>>>>>> master
         const generator = new EmbedGenerator();
         const channel = messageOrInteraction.channel;
 
@@ -235,11 +214,7 @@ class GetServersStaticStatsFeature extends Feature {
         )
 
         const result = await removeStatsMessage(
-<<<<<<< HEAD
-            targetChannel, targetMessage
-=======
             targetChannelId, targetMessageId
->>>>>>> master
         );
 
         if (result.error) {
@@ -267,49 +242,31 @@ class GetServersStaticStatsFeature extends Feature {
         if (message.author.id !== config.OWNERID)
             return;
 
-<<<<<<< HEAD
-        let options = {};
-=======
         let embed = null;
->>>>>>> master
         if (this.messageCommandAliases.includes(command)) {
             const targetChannelId = args[0];
             const targetMessageId = args[1];
             const ip = args[2];
             const port = args[3];
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponse(
-                targetChannelId, targetMessageId, ip, port
-=======
             embed = await this.generateEmbedResponse(
                 message, targetChannelId, targetMessageId, ip, port
->>>>>>> master
             );
         } else if (this.messageCommandAliasesDropStat.includes(command)) {
             const targetChannelId = args[0];
             const targetMessageId = args[1];
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponseDrop(
-                targetChannelId, targetMessageId
-=======
             embed = await this.generateEmbedResponseDrop(
                 message, targetChannelId, targetMessageId
->>>>>>> master
             );
 
         } else {
             return;
         }
 
-<<<<<<< HEAD
-        sendMessage(message.channel, options);
-=======
         sendMessage(message.channel, {
             embeds: [embed]
         });
->>>>>>> master
     }
 
     async onInteractionCommand(interaction) {
@@ -318,11 +275,7 @@ class GetServersStaticStatsFeature extends Feature {
             return;
 
         const command = interaction.commandName;
-<<<<<<< HEAD
-        let options = {};
-=======
         let embed = null;
->>>>>>> master
 
         if (command === this.slashCommandName) {
             const targetChannel = interaction.options.getString("channel");
@@ -332,11 +285,7 @@ class GetServersStaticStatsFeature extends Feature {
 
             await deferInteractionReply(interaction);
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponse(
-=======
             embed = await this.generateEmbedResponse(
->>>>>>> master
                 interaction, targetChannel, targetMessage, ip, port
             );
         } else if (command === this.slashCommandNameDropStat) {
@@ -345,24 +294,16 @@ class GetServersStaticStatsFeature extends Feature {
 
             await deferInteractionReply(interaction);
 
-<<<<<<< HEAD
-            options = await this.generateEmbedResponseDrop(
-=======
             embed = await this.generateEmbedResponseDrop(
->>>>>>> master
                 interaction, targetChannel, targetMessage
             );
         } else {
             return;
         }
 
-<<<<<<< HEAD
-        replyInteraction(interaction, options);
-=======
         replyInteraction(interaction, {
             embeds: [embed]
         });
->>>>>>> master
     }
 }
 
