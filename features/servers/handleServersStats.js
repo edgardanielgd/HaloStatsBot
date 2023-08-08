@@ -79,7 +79,13 @@ class GetServersStaticStatsFeature extends Feature {
 
     async updateStats() {
         for (const statServer of this.statsMessages) {
-            const channel = await this.bot.channels.fetch(statServer.channel);
+            let channel = null;
+            try {
+                channel = await this.bot.channels.fetch(statServer.channel);
+            } catch (e) {
+                continue;
+            }
+
             if (!channel) {
                 continue;
             }
@@ -108,16 +114,6 @@ class GetServersStaticStatsFeature extends Feature {
 
                 const title = `${data.name}`;
 
-<<<<<<< HEAD
-                let description = `\`Map:\` ${data.mapName}\n`;
-                description += `\`Gametype:\` ${data.gametype}\n`;
-                description += `\`Variant:\` ${data.gameVariant}\n`;
-                description += `\`Players:\` ${data.currentPlayers}/${data.maxPlayers}\n`;
-                description += `\`Teamplay:\` ${data.teamPlay ? "Yes" : "No"}\n`;
-                if (data.teamPlay) {
-                    description += `\`Red Team:\` #${data.redPlayers.length} \`Score:\` ${data.redScore}\n`;
-                    description += `\`Blue Team:\` #${data.bluePlayers.length} \`Score:\` ${data.blueScore}\n`;
-=======
                 let description = `\`Map:\`\t ${data.mapName}\n`;
                 description += `\`Gametype:\`\t ${data.gametype}\n`;
                 description += `\`Variant:\`\t ${data.gameVariant}\n`;
@@ -126,7 +122,6 @@ class GetServersStaticStatsFeature extends Feature {
                 if (data.teamPlay) {
                     description += `\`Red Team:\`\t #${data.redPlayers.length}\t \`Score:\` ${data.redScore}\n`;
                     description += `\`Blue Team:\`\t #${data.bluePlayers.length}\t \`Score:\` ${data.blueScore}\n`;
->>>>>>> master
                 }
                 description += "\n";
                 const players = data.teamPlay ? data.redPlayers.concat(data.bluePlayers) : data.players;
@@ -134,11 +129,7 @@ class GetServersStaticStatsFeature extends Feature {
                     const player = players[i];
                     const teamLogo = data.teamPlay ? (player.team === "red" ? "🔴" : "🔵") : "⚪";
 
-<<<<<<< HEAD
-                    description += `\`${teamLogo} ${i + 1}. \`${player.name} \`Score:\` ${player.score} \`Ping:\` ${player.ping} ms\n`;
-=======
-                    description += `\`${teamLogo} ${i + 1}. \`\t${player.name} \`Score:\`\t ${player.score} \`Ping:\`\t ${player.ping} ms\n`;
->>>>>>> master
+                    description += `\`${teamLogo} ${i + 1}. \`\t${player.name}\t \`Score:\` ${player.score}\t \`Ping:\` ${player.ping} ms\n`;
                 }
 
                 generator.updateAtomicData(
@@ -147,7 +138,7 @@ class GetServersStaticStatsFeature extends Feature {
                 );
             }
 
-            await editMessage(message, {
+            editMessage(message, {
                 content: null,
                 embeds: [generator.getEmbed()]
             });

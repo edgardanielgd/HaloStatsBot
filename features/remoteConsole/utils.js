@@ -64,11 +64,6 @@ pkgUtils = {
 
         return description;
     },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> master
 
     generateBasicServerDescription: (conn, data) => {
         // Lets create a beautiful embed body
@@ -135,10 +130,6 @@ pkgUtils = {
 
         return description;
     },
-<<<<<<< HEAD
->>>>>>> master
-=======
->>>>>>> master
     generatePlayersLocationsDescription: data => {
         // This has a simplier body than the server full description
 

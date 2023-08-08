@@ -54,6 +54,8 @@ class Feature {
     onInteractionButton(interaction) { }
 
     onReady() { }
+
+    onGuildMemberAdd(member) { }
 }
 
 module.exports = Feature;

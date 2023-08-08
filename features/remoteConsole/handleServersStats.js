@@ -81,7 +81,13 @@ class RemoteConsoleGetServersStaticStatsFeature extends Feature {
 
     async updateStats() {
         for (const statServer of this.statsMessages) {
-            const channel = await this.bot.channels.fetch(statServer.channel);
+            let channel = null;
+            try {
+                channel = await this.bot.channels.fetch(statServer.channel);
+            } catch (e) {
+                continue;
+            }
+
             if (!channel) {
                 continue;
             }

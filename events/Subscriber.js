@@ -23,6 +23,8 @@ class Subscriber {
         this.onInteractionModalSubmitFeatures = [];
         this.onInteractionButtonFeatures = [];
 
+        this.onGuildMemberAddFeatures = [];
+
         this.onReadyFeatures = [];
 
         // Slash commands must be registered across discord API
@@ -42,6 +44,8 @@ class Subscriber {
         this.subscribeOnInteraction();
 
         this.subscribeOnReady();
+
+        this.subscribeOnGuildMemberAdd();
     }
 
     // Actual Subscribers
@@ -126,6 +130,14 @@ class Subscriber {
         });
     }
 
+    subscribeOnGuildMemberAdd() {
+        this.bot.on('guildMemberAdd', member => {
+            for (const feature of this.onGuildMemberAddFeatures) {
+                feature.onGuildMemberAdd(member, this.bot);
+            }
+        });
+    }
+
     // Event Registerers
 
     registerOnMessageCommand(feature) {
@@ -173,6 +185,9 @@ class Subscriber {
         this.onReadyFeatures.push(feature);
     }
 
+    registerOnGuildMemberAdd(feature) {
+        this.onGuildMemberAddFeatures.push(feature);
+    }
 
     // Slash command registerer
     registerSlashCommands() {

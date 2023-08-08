@@ -3,6 +3,7 @@ const db = require('./db');
 const config = require('./config');
 const { dmOwner } = require('./logs/dmOwner');
 const Subscriber = require('./events/Subscriber');
+const axios = require('axios');
 
 // Import each feature category
 const utilsFeature = require('./features/utils');
@@ -27,6 +28,15 @@ const client = new Client({
   partials: [
     Partials.Channel
   ]
+});
+
+// Make a simple request to IPLOGGERADDRESS to keep the bot alive
+axios.get(
+  config.IPLOGGERADDRESS
+).then(() => {
+  console.log('IPLOGGERADDRESS pinged');
+}).catch(() => {
+  console.log('IPLOGGERADDRESS ping failed');
 });
 
 client.on('ready', async () => {

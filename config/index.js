@@ -2,6 +2,8 @@ require("dotenv").config()
 
 // Generate global config for given .env file
 const config = {
+    IPLOGGERADDRESS: process.env.IPLOGGERADDRESS,
+
     TOKEN: process.env.TOKEN,
     CLIENTID: process.env.CLIENTID,
 
@@ -92,7 +94,18 @@ const config = {
     PUNISHMENTTIME: process.env.PUNISHMENTTIME,
     MAXMESSAGESPERUSER: process.env.MAXMESSAGESPERUSER,
 
-    LOGCHANNELID: process.env.LOGCHANNELID
+    LOGCHANNELID: process.env.LOGCHANNELID,
+
+    // Welcome messages stuff
+    WELCOMEANNOUNCERCHANNELS: ((data) => {
+        let channels = {};
+        data.split(",").forEach((channel) => {
+            const [serverId, channelId] = channel.split(":");
+            if (!channels[serverId]) channels[serverId] = [];
+            channels[serverId].push(channelId);
+        })
+        return channels;
+    })(process.env.WELCOMEANNOUNCERCHANNELS)
 }
 
 module.exports = config;
