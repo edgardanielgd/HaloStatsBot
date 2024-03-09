@@ -111,8 +111,8 @@ class RemoteConsoleConnection extends event.EventEmitter {
 
                     break;
                 default:
-                    // Other cases are more complex, we must parse each object
-                    console.log(data);
+                // Other cases are more complex, we must parse each object
+
 
             }
         } catch (e) {

@@ -16,7 +16,8 @@ db.connect = () => new Promise((resolve, _) => {
         (err, client) => {
             if (err) {
                 // Db client won't be defined
-                return
+                db.client = null;
+                resolve();
             }
 
             console.log("Initialized database")
