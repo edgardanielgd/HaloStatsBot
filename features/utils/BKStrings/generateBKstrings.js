@@ -1,8 +1,10 @@
 const Feature = require("../../Feature.js");
 const config = require("../../../config/index.js");
 const genereateBlackshaloStrings = require("./generateBlackshaloStrings.js");
+const generateDiscordStrings = require("./generateDiscordStrings.js");
 const EmbedGenerator = require("../../../utils/generateEmbed.js");
 const { sendMessage, replyInteraction } = require("../../../utils/crudMessages.js");
+const axios = require("axios");
 const { SlashCommandBuilder } = require("discord.js");
 
 class GenerateBKStringsFeature extends Feature {
@@ -14,21 +16,11 @@ class GenerateBKStringsFeature extends Feature {
         this.slashCommandName = "generate";
     }
 
-    config = (bot, subscriber) => {
-        // Generate slash command info
-        const slashCommandInfo = new SlashCommandBuilder()
-            .setName(this.slashCommandName)
-            .setDescription("Generate admins lists for discord and blackshalo");
-
-        subscriber.registerOnInteractionCommand(this, [
-            slashCommandInfo.toJSON()
-        ]);
+    config = (_, subscriber) => {
         subscriber.registerOnMessageCommand(this);
-
-        this.bot = bot;
     }
 
-    async onMessageCommand(message, command, _) {
+    async onMessageCommand(message, command, args) {
         if (!this.messageCommandAliases.includes(command)) {
             return;
         }
@@ -38,38 +30,70 @@ class GenerateBKStringsFeature extends Feature {
         sendMessage(message.channel, options)
     }
 
-    async onInteractionCommand(interaction) {
-        if (interaction.commandName !== this.slashCommandName) {
-            return;
-        }
+    async generateFilesMessage(interactionOrMessage) {
+        const attachments = interactionOrMessage.attachments;
 
-        const options = await this.generateFilesMessage(interaction);
-
-        replyInteraction(interaction, options);
-    }
-
-    async generateFilesMessage() {
-        const BKServerID = config.BKDISCORDSERVER;
-        const BKRoles = config.BKROLESTOSCAN;
-
-        let roles;
-
-        try {
-            const guild = await this.bot.guilds.fetch(BKServerID);
-            roles = await guild.roles.fetch().filter(
-                role => BKRoles.includes(role.id)
-            );
-        } catch (e) {
+        if (attachments.size === 0)
             return {
-                content: "I couldn't fetch the roles from BK's discord server"
+                content: "You need to attach a file to generate the strings"
+            }
+
+        // Read the file
+        const file = attachments.first()?.url;
+
+        if (!file)
+            return {
+                content: "You need to attach a file to generate the strings"
+            }
+
+        // Fetch the given file
+        let json;
+        try {
+            const response = await axios.get(file);
+            json = response.data;
+        } catch (error) {
+            console.log(error)
+            return {
+                content: "Error fetching the file"
             }
         }
 
+        if (!json)
+            return {
+                content: "Error parsing the file"
+            }
 
-        const concatenated = genereateBlackshaloStrings(roles);
+        // Generate the strings
+        const { data: blackshaloString, error: blackshaloError } = genereateBlackshaloStrings(json);
+
+        if (blackshaloError)
+            return {
+                content: blackshaloError
+            }
+
+        // Check if discord strings can be generated
+        const { data: discordString, error: discordError } = generateDiscordStrings(json);
+
+        if (discordError)
+            return {
+                content: discordError
+            }
 
 
-        return { content: concatenated };
+        return {
+            content: "Don't forget to replace webhook URL in discord.json!!",
+            files: [
+                {
+                    attachment: Buffer.from(blackshaloString, "utf-8"),
+                    name: "blackshalo.txt"
+                },
+                {
+                    attachment: Buffer.from(discordString, "utf-8"),
+                    name: "discord.json"
+                }
+            ]
+        }
+
     }
 
 }
